@@ -1,4 +1,4 @@
 module.exports = {
-    ServerConfig : require('./Server-Config'),
+    ServerConfig : require('./server-config'),
     logger : require('./logger-config')
 }

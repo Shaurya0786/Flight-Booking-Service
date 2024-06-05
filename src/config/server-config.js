@@ -5,5 +5,6 @@ const dotenv = require('dotenv')
 dotenv.config();
 
 module.exports = {
-    Port: process.env.Port
+    Port: process.env.Port,
+    Flighturl : process.env.FlightImportUrl
 }
