@@ -7,4 +7,4 @@ const router = express.Router()
 router.post('/',bookingController.createBookingController)
 
 
-module.exports = router
+module.exports = router                                                
