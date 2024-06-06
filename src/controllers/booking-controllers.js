@@ -8,7 +8,7 @@ async function createBookingController(req,res){
         const booking = await BookigService.createBooking({
             flightId:req.body.flightId,
             userId:req.body.userId,
-            noOfSeats:req.body.noOfSeats
+            noofSeats:req.body.noofSeats
         })
         SuccessResponse.data = booking
         return res.status(StatusCodes.CREATED).json(SuccessResponse)
