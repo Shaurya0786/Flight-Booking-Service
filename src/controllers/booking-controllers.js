@@ -52,9 +52,26 @@ async function userBookings(req,res){
     }
 }
 
+async function cancelBookingController(req,res){
+    try {
+        const response = await BookigService.cancelBooking({
+            flightId:req.body.flightId,
+            bookingId:req.params.id,
+            userId:req.body.userId,
+        })
+        SuccessResponse.data = response
+        return res.status(StatusCodes.CREATED).json(SuccessResponse)
+    } catch (error) {
+        ErrorResponse.error = error;
+        return res
+                .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                .json(ErrorResponse);
+    }
+}
 
 module.exports = {
     createBookingController,
     makePaymentController,
-    userBookings
+    userBookings,
+    cancelBookingController
 }
