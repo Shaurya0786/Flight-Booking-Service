@@ -4,6 +4,8 @@ const AppError = require('../utils/errors/app-error')
 const db = require('../models')
 const { StatusCodes } = require('http-status-codes')
 const {ServerConfig} = require('../config')
+const {BookingEnums} = require('../utils/common/enum-string');
+const { BOOKED, CANCELLED } = BookingEnums;
 
 const BookingInstance = new BookingRepository()
 
@@ -11,7 +13,6 @@ const BookingInstance = new BookingRepository()
 async function createBooking(data){
     const transaction = await db.sequelize.transaction()
     try {
-        console.log(data)
         const flight = await axios.get(`${ServerConfig.Flighturl}/${data.flightId}`)
         const flightdata = flight.data.data
         if(data.noofSeats>flightdata.totalSeats) throw new AppError('Not enough seats available', StatusCodes.BAD_REQUEST);
@@ -27,7 +28,48 @@ async function createBooking(data){
     }
 }
 
+async function makePayment(data){
+    const transaction = await db.sequelize.transaction();
+    try {
+        const bookingDetails = await BookingInstance.getBooking(data.bookingId,transaction)
+        if(bookingDetails.status == CANCELLED) throw new AppError('The booking has expired', StatusCodes.BAD_REQUEST)
+        const bookingTime = new Date(bookingDetails.createdAt)
+        const currentTime = new Date();
+        if(currentTime-bookingTime>300000){
+            await BookingInstance.update(data.bookingId, {status: CANCELLED}, transaction);
+            await axios.patch(`${ServerConfig.Flighturl}/${bookingDetails.flightId}`,{seats:data.noofSeats,decrease:0})
+            throw new AppError('The booking has expired', StatusCodes.BAD_REQUEST);
+        }
+        if(bookingDetails.totalPrice!=data.totalCost){
+            throw new AppError('The amount of the payment doesnt match', StatusCodes.BAD_REQUEST);
+        }
+        if(bookingDetails.userId != data.userId) {
+            throw new AppError('The user corresponding to the booking doesnt match', StatusCodes.BAD_REQUEST);
+        }
+
+        // here the payment method is successfull
+        await BookingInstance.updateBooking(data.bookingId, {status: BOOKED}, transaction);
+        await transaction.commit();
+
+    } catch (error) {
+        await transaction.rollback();
+        throw error;
+    }
+}
+
+
+async function userBookingService(data){
+    try {
+        const userbookings = await BookingInstance.userBooking(data)
+        return userbookings
+    } catch (error) {
+        throw error
+    }
+}
+
 
 module.exports = {
-    createBooking
+    createBooking,
+    makePayment,
+    userBookingService
 }

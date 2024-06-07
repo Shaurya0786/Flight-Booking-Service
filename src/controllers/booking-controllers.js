@@ -19,6 +19,42 @@ async function createBookingController(req,res){
 }
 
 
+async function makePaymentController(req, res) {
+    try {
+        const response = await BookigService.makePayment({
+            totalCost: req.body.totalCost,
+            userId: req.body.userId,
+            bookingId: req.body.bookingId
+        });
+        SuccessResponse.data = response;
+        return res
+                .status(StatusCodes.OK)
+                .json(SuccessResponse);
+    } catch(error) {
+        ErrorResponse.error = error;
+        return res
+                .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                .json(ErrorResponse);
+    }
+}
+
+
+async function userBookings(req,res){
+    try {
+        const response = await BookigService.userBookingService(req.params.id)
+        SuccessResponse.data = response
+        return res.status(StatusCodes.CREATED).json(SuccessResponse)
+    } catch (error) {
+        ErrorResponse.error = error;
+        return res
+                .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                .json(ErrorResponse);
+    }
+}
+
+
 module.exports = {
-    createBookingController
+    createBookingController,
+    makePaymentController,
+    userBookings
 }
