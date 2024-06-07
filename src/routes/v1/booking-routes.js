@@ -10,4 +10,5 @@ router.post('/payment',bookingController.makePaymentController)
 
 router.get('/users/:id',bookingController.userBookings)
 
+router.post('/:id/cancel',bookingController.cancelBookingController)
 module.exports = router                                                

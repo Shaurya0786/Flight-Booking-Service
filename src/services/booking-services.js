@@ -36,9 +36,12 @@ async function makePayment(data){
         const bookingTime = new Date(bookingDetails.createdAt)
         const currentTime = new Date();
         if(currentTime-bookingTime>300000){
-            await BookingInstance.update(data.bookingId, {status: CANCELLED}, transaction);
-            await axios.patch(`${ServerConfig.Flighturl}/${bookingDetails.flightId}`,{seats:data.noofSeats,decrease:0})
-            throw new AppError('The booking has expired', StatusCodes.BAD_REQUEST);
+                await cancelBooking({
+                    flightId:bookingDetails.flightId,
+                    bookingId:data.bookingId,
+                    userId:data.userId,
+                })
+                throw new AppError('The booking has expired', StatusCodes.BAD_REQUEST);   
         }
         if(bookingDetails.totalPrice!=data.totalCost){
             throw new AppError('The amount of the payment doesnt match', StatusCodes.BAD_REQUEST);
@@ -67,9 +70,32 @@ async function userBookingService(data){
     }
 }
 
+async function cancelBooking(data){
+    const transaction = await db.sequelize.transaction();
+    try {
+        const bookingDetails = await BookingInstance.getBooking(data.bookingId,transaction)
+        if(bookingDetails.status == CANCELLED) {
+            await transaction.commit();
+            return true;
+        }
+        if(bookingDetails.userId != data.userId) {
+            throw new AppError('The user corresponding to the booking doesnt match', StatusCodes.BAD_REQUEST);
+        }
+        if(bookingDetails.flightId != data.flightId) {
+            throw new AppError('The flightId doesnt match to the booking doesnt match', StatusCodes.BAD_REQUEST);
+        }
+        await axios.patch(`${ServerConfig.Flighturl}/${bookingDetails.flightId}/seats`,{seats:bookingDetails.noofSeats,decrease:0})
+        await BookingInstance.update(data.bookingId, {status: CANCELLED}, transaction);
+        await transaction.commit();
+    } catch (error) {
+        await transaction.rollback();
+        throw error;
+    }
+}
 
 module.exports = {
     createBooking,
     makePayment,
-    userBookingService
+    userBookingService,
+    cancelBooking
 }

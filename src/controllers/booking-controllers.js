@@ -14,7 +14,7 @@ async function createBookingController(req,res){
         return res.status(StatusCodes.CREATED).json(SuccessResponse)
     } catch (error) {
         ErrorResponse.error = error
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(ErrorResponse)
+        return res.status(ErrorResponse.StatusCodes).json(ErrorResponse)
     }
 }
 
@@ -33,7 +33,7 @@ async function makePaymentController(req, res) {
     } catch(error) {
         ErrorResponse.error = error;
         return res
-                .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                .status(ErrorResponse.StatusCodes)
                 .json(ErrorResponse);
     }
 }
@@ -47,14 +47,31 @@ async function userBookings(req,res){
     } catch (error) {
         ErrorResponse.error = error;
         return res
-                .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                .status(ErrorResponse.StatusCodes)
                 .json(ErrorResponse);
     }
 }
 
+async function cancelBookingController(req,res){
+    try {
+        const response = await BookigService.cancelBooking({
+            flightId:req.body.flightId,
+            bookingId:req.params.id,
+            userId:req.body.userId,
+        })
+        SuccessResponse.data = response
+        return res.status(StatusCodes.CREATED).json(SuccessResponse)
+    } catch (error) {
+        ErrorResponse.error = error;
+        return res
+                .status(ErrorResponse.StatusCodes)
+                .json(ErrorResponse);
+    }
+}
 
 module.exports = {
     createBookingController,
     makePaymentController,
-    userBookings
+    userBookings,
+    cancelBookingController
 }
