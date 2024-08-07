@@ -6,5 +6,6 @@ dotenv.config();
 
 module.exports = {
     Port: process.env.Port,
-    Flighturl : process.env.FlightImportUrl
+    Flighturl : process.env.FlightImportUrl,
+    ProcessQueue : process.env.ProcessQueue
 }

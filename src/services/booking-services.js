@@ -3,7 +3,7 @@ const {BookingRepository} = require('../repositories')
 const AppError = require('../utils/errors/app-error')
 const db = require('../models')
 const { StatusCodes } = require('http-status-codes')
-const {ServerConfig} = require('../config')
+const {ServerConfig, Queue} = require('../config')
 const {BookingEnums} = require('../utils/common/enum-string');
 const { BOOKED, CANCELLED } = BookingEnums;
 
@@ -23,6 +23,7 @@ async function createBooking(data){
         await transaction.commit()
         return booking
     } catch (error) {
+        console.log(error)
         await transaction.rollback()
         return error
     }
@@ -52,9 +53,17 @@ async function makePayment(data){
 
         // here the payment method is successfull
         await BookingInstance.updateBooking(data.bookingId, {status: BOOKED}, transaction);
+        const flight = await axios.get(`${ServerConfig.Flighturl}/${bookingDetails.flightId}`)
+        const flightdata = flight.data.data
+        Queue.sendMessageToQueue({
+            subject:'Booking Confirmation',
+            text:`The Booking for flight ${flightdata.flightNumber}`,
+            reciverEmail:'shauryadhawan0786@gmail.com'
+        })
         await transaction.commit();
-
     } catch (error) {
+        
+        console.log(error)
         await transaction.rollback();
         throw error;
     }
@@ -66,6 +75,7 @@ async function userBookingService(data){
         const userbookings = await BookingInstance.userBooking(data)
         return userbookings
     } catch (error) {
+        console.log(error)
         throw error
     }
 }
@@ -84,7 +94,7 @@ async function cancelBooking(data){
         if(bookingDetails.flightId != data.flightId) {
             throw new AppError('The flightId doesnt match to the booking doesnt match', StatusCodes.BAD_REQUEST);
         }
-        await axios.patch(`${ServerConfig.Flighturl}/${bookingDetails.flightId}/seats`,{seats:bookingDetails.noofSeats,decrease:0})
+        await axios.patch(`${ServerConfig.Flighturl}/${bookingDetails.flightId}`,{seats:bookingDetails.noofSeats,decrease:0})
         await BookingInstance.update(data.bookingId, {status: CANCELLED}, transaction);
         await transaction.commit();
     } catch (error) {

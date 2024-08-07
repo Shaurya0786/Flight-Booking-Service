@@ -22,7 +22,7 @@ async function createBookingController(req,res){
 
 async function makePaymentController(req, res) {
     try {
-        const idempotencyKey = req.headers['x-Idempotency-Key']
+        const idempotencyKey = req.headers['x-idempotency-key']
         if(!idempotencyKey) return res.status(StatusCodes.BAD_REQUEST).json({message: 'idempotency key missing'})
         if(isMemdb[idempotencyKey]) return res.status(StatusCodes.BAD_REQUEST).json({message: 'Cannot retry on a successful payment'})
         const response = await BookigService.makePayment({
